@@ -12,7 +12,7 @@ void drawCat() {
     printf("       ／＞　 フ\n");
     printf("       | 　_　_| \n");
     printf("     ／` ミ＿xノ \n");
-    printf("    /　　　　 |  \n");
+    printf("    /　　　　 |  \n");+
     printf("   /　 ?　　 ?  \n");
     printf("   │　　|　|　|   \n");
     printf("／￣|　　 |　|　| \n");
@@ -37,9 +37,19 @@ void drawRoom(int catPos) {
     printf("#\n##########\n");
 }
 
-void printStatus(int soupCount, int intimacy) {
+void printStatus(int soupCount, int intimacy, int mood, int cp) {
     printf("==================== 현재 상태 ===================\n");
     printf("현재까지 만든 수프: %d개\n", soupCount);
+    printf("CP: %d 포인트\n", cp);
+    printf("쫀떡이 기분(0~3): %d\n", mood);
+    switch (mood) {
+    case 0: printf("기분이 매우 나쁩니다.\n"); break;
+    case 1: printf("심심해합니다.\n"); break;
+    case 2: printf("식빵을 굽습니다.\n"); break;
+    case 3: printf("골골송을 부릅니다.\n"); break;
+    default: printf("알 수 없는 기분입니다.\n"); break;
+    }
+
     printf("집사와의 관계(0~4): %d\n", intimacy);
     switch (intimacy) {
     case 0: printf("곁에 오는 것조차 싫어합니다.\n"); break;
@@ -129,22 +139,49 @@ void handleMovementAndSoup(int* catPos, int intimacy, int* soupCount) {
         printf("쫀떡이는 집에서 쉬고 있습니다.\n");
     }
 }
+void updateMoodRandomly(int intimacy, int* mood)  //Mood 란던 기능 추가
+{
+    int dice = rand() % 6 + 1;
+    printf("6-%d: 주사위 눈이 %d이하이면 그냥 기분이 나빠집니다.\n", intimacy, 6 - intimacy);
+    printf("주사위를 굴립니다... %d이(가) 나왔습니다.\n", dice);
+
+    if (dice <= (6 - intimacy)) {
+        if (*mood > 0) 
+        {
+            (*mood)--;
+            printf("쫀떡이의 기분이 나빠집니다: %d -> %d\n", *mood + 1, *mood);
+        }
+        else 
+        {
+            printf("이미 기분이 최악입니다.\n");
+        }
+    }
+    else 
+    {
+        printf("다행히 기분은 그대로입니다.\n");
+    }
+}
 
 int main() {
     const char* name = "쫀떡이";
     int intimacy = 2;
     int soupCount = 0;
     int catPos = HOME_POS;
+
+    int mood = 3;  // 기분: 0~3, 초기값 3
+    int cp = 0;   // CP 초기값
+
     srand((unsigned int)time(NULL));
 
     printf("**** 야옹이와 수프 ****\n\n");
     drawCat();
     printf("쫀떡이는 식빵을 굽고 있습니다.\n");
-    Sleep(1000);
+    Sleep(2000);
     system("cls");
 
     while (1) {
-        printStatus(soupCount, intimacy);
+        printStatus(soupCount, intimacy, mood, cp);
+        updateMoodRandomly(intimacy, &mood);
         drawRoom(catPos);
 
         int choice = getPlayerChoice();
@@ -155,7 +192,5 @@ int main() {
         Sleep(2500);
         system("cls");
     }
-
-
     return 0;
 }
