@@ -106,40 +106,77 @@ int updateIntimacy(int choice, int intimacy) {
     return intimacy;
 }
 
-void handleMovementAndSoup(int* catPos, int intimacy, int* soupCount) {
-    int dice = rand() % 6 + 1;
-    int moveToBowl = (dice >= (6 - intimacy)) ? 1 : 0;
-
+void handleMovementAndSoup(int* catPos, int* mood, int intimacy, int* soupCount, int* hasScratcher, int* hasTower) {
     printf("쫀떡이 이동 중...\n");
-    printf("주사위를 굴립니다... %d 나왔습니다!\n", dice);
 
-    if (moveToBowl && *catPos < BOWL_POS) {
-        (*catPos)++;
-        printf("냄비 쪽으로 이동합니다.\n");
+    int destination = *catPos; 
+
+    if (*mood == 0) {
+        printf("기분이 매우 나쁜 쫀떡이는 집으로 향합니다.\n");
+        destination = HOME_POS;
     }
-    else if (!moveToBowl && *catPos > HOME_POS) {
-        (*catPos)--;
-        printf("집 쪽으로 이동합니다.\n");
+    else if (*mood == 1) {
+        if (*hasScratcher || *hasTower) {
+            printf("쫀떡이는 심심해서 놀이기구 쪽으로 이동합니다.\n");
+            
+            int distToS = (*hasScratcher) ? abs(*catPos - 3) : 1000;
+            int distToT = (*hasTower) ? abs(*catPos - 2) : 1000;
+            destination = (distToS <= distToT) ? 3 : 2;
+        }
+        else {
+            printf("놀 거리가 없어서 기분이 매우 나빠집니다.\n");
+            if (*mood > 0) (*mood)--;
+            return;
+        }
     }
-    else {
-        printf("더 이상 이동할 수 없습니다.\n");
+    else if (*mood == 2) {
+        printf("쫀떡이는 기분 좋게 식빵을 굽고 있습니다.\n");
+        return;
     }
+    else if (*mood == 3) {
+        printf("쫀떡이는 골골송을 부르며 수프를 만들러 갑니다.\n");
+        destination = BOWL_POS;
+    }
+
+
+    if (*catPos < destination) (*catPos)++;
+    else if (*catPos > destination) (*catPos)--;
 
     if (*catPos == BOWL_POS) {
         int soupType = rand() % 3;
-        printf("쫀떡이(가) ");
+        printf("쫀떡이가 ");
         switch (soupType) {
-        case 0: printf("감자 수프를 만들었습니다!\n"); break;
-        case 1: printf("양송이 수프를 만들었습니다!\n"); break;
-        case 2: printf("브로콜리 수프를 만들었습니다!\n"); break;
+        case 0: printf("감자 수프를 "); break;
+        case 1: printf("양송이 수프를 "); break;
+        case 2: printf("브로콜리 수프를 "); break;
         }
+        printf("만들었습니다!\n");
         (*soupCount)++;
     }
     else if (*catPos == HOME_POS) {
-        printf("쫀떡이는 집에서 쉬고 있습니다.\n");
+        static int lastHomePos = -1;
+        if (lastHomePos == *catPos && *mood < 3) {
+            (*mood)++;
+            printf("쫀떡이는 집에서 쉬면서 기분이 조금 나아졌습니다: %d -> %d\n", *mood - 1, *mood);
+        }
+        else {
+            printf("쫀떡이는 집에서 쉬고 있습니다.\n");
+        }
+        lastHomePos = *catPos;
+    }
+    else if (*catPos == 2 && *hasTower) {
+        int before = *mood;
+        *mood = (*mood + 2 > 3) ? 3 : *mood + 2;
+        printf("쫀떡이는 캣타워를 뛰어다닙니다. 기분이 제법 좋아졌습니다: %d -> %d\n", before, *mood);
+    }
+    else if (*catPos == 3 && *hasScratcher) {
+        int before = *mood;
+        *mood = (*mood + 1 > 3) ? 3 : *mood + 1;
+        printf("쫀떡이는 스크래처를 긁고 놀았습니다. 기분이 조금 좋아졌습니다: %d -> %d\n", before, *mood);
     }
 }
-void updateMoodRandomly(int intimacy, int* mood)  //Mood 란던 기능 추가
+
+void updateMoodRandomly(int intimacy, int* mood) 
 {
     int dice = rand() % 6 + 1;
     printf("6-%d: 주사위 눈이 %d이하이면 그냥 기분이 나빠집니다.\n", intimacy, 6 - intimacy);
@@ -168,8 +205,12 @@ int main() {
     int soupCount = 0;
     int catPos = HOME_POS;
 
-    int mood = 3;  // 기분: 0~3, 초기값 3
-    int cp = 0;   // CP 초기값
+    int mood = 3;  
+    int cp = 0;  
+
+
+    int hasScratcher = 0;
+    int hasTower = 0;
 
     srand((unsigned int)time(NULL));
 
@@ -187,7 +228,8 @@ int main() {
         int choice = getPlayerChoice();
         intimacy = updateIntimacy(choice, intimacy);
 
-        handleMovementAndSoup(&catPos, intimacy, &soupCount);
+        handleMovementAndSoup(&catPos, &mood, intimacy, &soupCount, &hasScratcher, &hasTower);
+
 
         Sleep(2500);
         system("cls");
