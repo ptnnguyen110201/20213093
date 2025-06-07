@@ -20,7 +20,8 @@ void drawCat() {
     printf("| (￣?＿_?_)__) \n");
     printf("＼二つ\n");
 }
-// 방의 구조와 고양이의 현재 위치를 출력
+// 현재 방의 상태를 출력하고, 고양이의 위치를 'C'로 표시합니다.
+// 'H': 집 위치, 'B': 수프 냄비 위치
 void drawRoom(int catPos) {
     printf("##########\n");
     for (int i = 0; i < ROOM_WIDTH; i++) {
@@ -38,7 +39,7 @@ void drawRoom(int catPos) {
     printf("#\n##########\n");
 }
 
-// 현재 게임 상태(수프 개수, CP, 기분, 친밀도)를 출력
+// 현재까지 만든 수프 개수, CP, 기분(mood), 친밀도(intimacy)를 화면에 출력하는 함수입니다.
 void printStatus(int soupCount, int intimacy, int mood, int cp) {
     printf("==================== 현재 상태 ===================\n");
     printf("현재까지 만든 수프: %d개\n", soupCount);
@@ -63,7 +64,8 @@ void printStatus(int soupCount, int intimacy, int mood, int cp) {
     }
     printf("==================================================\n\n");
 }
-// 플레이어의 상호작용 선택을 받아옴
+// 현재 구매한 아이템에 따라 가능한 상호작용 목록을 출력하고, 사용자의 선택을 입력받습니다.
+// 0: 아무것도 안함, 1: 긁어주기, 2/3: 장난감 선택 가능 (조건부)
 int getPlayerChoice(int hasMouseToy, int hasLaserPointer) {
     int choice = -1;
     printf("어떤 상호작용을 하시겠습니까?\n");
@@ -90,7 +92,7 @@ int getPlayerChoice(int hasMouseToy, int hasLaserPointer) {
     }
     return choice;
 }
-// 플레이어의 선택(choice)에 따라 쫀떡이와의 친밀도(intimacy)를 업데이트하는 함수
+// 상호작용 선택값(choice)에 따라 친밀도를 확률적으로 증가/감소시킵니다.
 int updateIntimacy(int choice, int intimacy) {
     int dice = rand() % 6 + 1;
     if (choice == 0) {
@@ -120,7 +122,7 @@ int updateIntimacy(int choice, int intimacy) {
     return intimacy;
 }
 
-// 기분에 따라 쫀떡이의 위치 이동 및 행동 처리
+// 기분(mood)에 따라 이동 방향을 결정하고, 특정 위치에 도달 시 수프 생성 또는 기분 회복 등의 행동을 처리합니다.
 void handleMovementAndSoup(int* catPos, int* mood, int intimacy, int* soupCount, int* hasScratcher, int* hasTower) {
     printf("쫀떡이 이동 중...\n");
 
@@ -190,7 +192,8 @@ void handleMovementAndSoup(int* catPos, int* mood, int intimacy, int* soupCount,
         printf("쫀떡이는 스크래처를 긁고 놀았습니다. 기분이 조금 좋아졌습니다: %d -> %d\n", before, *mood);
     }
 }
-// 친밀도에 따라 기분이 나빠질 확률 적용
+// 턴 시작 시 무작위 주사위를 통해 기분이 나빠질지 여부를 결정합니다.
+// 친밀도가 낮을수록 기분이 나빠질 확률이 높습니다.
 void updateMoodRandomly(int intimacy, int* mood) 
 {
     int dice = rand() % 6 + 1;
@@ -214,7 +217,8 @@ void updateMoodRandomly(int intimacy, int* mood)
     }
 }
 
-// 선택한 상호작용에 따라 기분/친밀도 변화 처리
+// 플레이어가 선택한 상호작용(choice)에 따라 기분과 친밀도(intimacy)를 조정합니다.
+
 int processInteraction(int choice, int intimacy, int* mood) {
     int dice = rand() % 6 + 1;
 
@@ -280,14 +284,16 @@ int processInteraction(int choice, int intimacy, int* mood) {
     return intimacy;
 }
 
-// 기분과 친밀도에 따라 CP 생성
+// 현재 기분과 친밀도를 기반으로 CP(Cute Point)를 생산하여 반환합니다.
+
 int produceCP(int mood, int intimacy) {
     int cpGain = ((mood > 0) ? (mood - 1) : 0) + intimacy;
     printf("쫀떡이의 기분과 친밀도에 따라 CP가 %d 포인트 생산되었습니다.\n", cpGain);
     return cpGain;
 }
 
-// 상점에서 아이템 구매 로직 처리
+// 상점 UI를 출력하고, CP가 충분할 경우 아이템을 구매할 수 있도록 처리합니다.
+// 이미 구매한 항목은 '(품절)' 표시됨.
 void openShop(int* cp, int* hasMouseToy, int* hasLaserPointer, int* hasScratcher, int* hasTower) {
     int choice = -1;
     printf("\n상점에서 물건을 살 수 있습니다.\n");
@@ -353,7 +359,8 @@ void openShop(int* cp, int* hasMouseToy, int* hasLaserPointer, int* hasScratcher
     Sleep(2000);
 }
 
-// 3턴에 실행되는 돌발퀘스트: 숫자 맞추기 게임
+// 3번째 턴에만 실행되는 돌발퀘스트 미니게임입니다.
+// 1~5 사이 숫자를 맞추는 게임이며 성공 여부에 따라 메시지가 다릅니다.
 void runQuest(int* questCompleted) {
     if (*questCompleted) return;
 
@@ -383,17 +390,18 @@ void runQuest(int* questCompleted) {
     *questCompleted = 1;
 }
 
-
+// 전체 게임 루프를 실행하는 메인 함수입니다.
+// 각 턴마다 상태 출력 → 기분 변화 → 상호작용 → CP 생산 → 상점 구매 → 이동 및 행동을 처리합니다.
 int main() {
     const char* name = "쫀떡이";
     int intimacy = 2;
     int soupCount = 0;
     int catPos = HOME_POS;
 
-    int mood = 3; // 기분 상태 (0~3), 3은 가장 좋은 상태
-    int turn = 1; // 턴 수를 추적 (3턴에 돌발퀘스트 발생)
-    int cp = 0;   // CP (귀여움 포인트), 아이템 구매에 사용
-    int questCompleted = 0; // 돌발퀘스트 완료 여부 (0 = 미완료, 1 = 완료)
+    int mood = 3; 
+    int turn = 1; 
+    int cp = 0;  
+    int questCompleted = 0; 
 
     int hasMouseToy = 0;
     int hasLaserPointer = 0;
